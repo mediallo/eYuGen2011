@@ -1,0 +1,516 @@
+package benchmark;
+import reconstruction.Config;
+
+import java.io.BufferedWriter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+
+import java.util.ArrayList;
+
+/**
+ * @author Mohamed Barkallah
+ *
+ * Class BenchmarkingFunctions : generate output's distributions
+ * 
+ * @param brokerFile :  the broker's output file
+ * @param subFile :     the subscription's output file
+ * @param brokerInitid :  id of a broker
+ * @param subInitId :     id of a subscription
+ * @param brokersList : the broker's list
+ * @param subsList :    the subscription's list
+ * @param membershipList : the membershipList, specify which broker serve the subscription
+ */
+
+public class BenchmarkingFunctions {
+
+    private String brokerFile, subFile;
+    private int brokerInitid, subInitId;
+    private ArrayList<Broker> brokersList;
+    private ArrayList<Subscription> subsList;
+    private ArrayList<Membership> membershipList;
+    
+
+    public BenchmarkingFunctions(String brokersFile, String subsFile){
+        this.brokerFile = brokersFile;
+        this.subFile = subsFile;
+        this.brokerInitid = 0; //initial id of the broker
+        this.subInitId = 0; //initial id of the sub
+        this.brokersList = new ArrayList<Broker>();
+        this.subsList = new ArrayList<Subscription>();
+        this.membershipList = new ArrayList<Membership>();
+    }
+
+  /**
+   * Create the broker's list from the broker's input file
+   * @return brokersList : the broker's list
+   */
+   public ArrayList<Broker> setBrokersList (){
+     Benchmark.outPutMessages ="    {Set the broker's list : Begin}";
+     Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+     File file = new File(brokerFile);
+     BufferedReader input = null;
+      try {
+          input = new BufferedReader(new FileReader(file));
+          String line = null;
+          // Read First line
+          if ((line = input.readLine()) != null){
+              String[] strs = line.split("; ");
+              Benchmark.outPutMessages = "     Broker's Numbers : "+strs[1]+" , Network Dim :"+strs[0]+"\n";
+              Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+          }
+          while ((line = input.readLine()) != null) {
+              Broker broker = new Broker() ;
+
+              String[] strs = line.split("; ");
+              broker.id = (int)Double.parseDouble(strs[0]);
+              broker.region = strs[1];
+
+                  String[] strCoord= strs[2].split(", ");
+              broker.coord_X = Double.parseDouble(strCoord[0]);
+              broker.coord_Y = Double.parseDouble(strCoord[1]);
+
+              brokersList.add(brokerInitid,broker);
+              brokerInitid++;
+          }
+      }catch (FileNotFoundException e) {e.printStackTrace();}
+       catch (IOException e) {e.printStackTrace();}
+
+        Benchmark.outPutMessages ="    {Set the broker's list : Done}\n";
+        Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+      return brokersList;
+   }
+
+  /**
+  * Create the subscription's list from the subscription's input file
+  * @param pointList
+  * @return brokersList : the subscription's list
+  */
+   public ArrayList<Subscription> setSubscriptionsList (ArrayList<Point> pointList ){
+      Benchmark.outPutMessages ="    {Set Subscription's List : Begin}\n";
+      Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+
+      Subscription subscription = null ;
+      File file = new File(subFile);
+      BufferedReader input = null;
+      String[] strCoord_N = new String[2];
+      String[] strCoord_E = new String[2];
+      String var[] = new String[2];;
+
+        try {
+            input = new BufferedReader(new FileReader(file));
+            String line = null;
+
+            // Read First line
+            if ((line = input.readLine()) != null){
+                String[] strs = line.split(";");
+                Benchmark.outPutMessages ="     Total Subscriptions Number : "+strs[0]+
+                        " Network Dimention : "+strs[1]+
+                        " Event Dimention : "+strs[2]+"\n";
+                Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+            }
+            //read next 3 lines
+            int l=0;
+            while (((line = input.readLine()) != null) && (l<3)) {
+                if (l==0){
+                    subscription = new Subscription() ;
+                    subscription.id = subInitId;
+                    subscription.region = line.toString();
+                    l++;
+                }else if (l==1){
+                    strCoord_N = line.split(" ");
+                    subscription.N_Coord_X = Double.parseDouble(strCoord_N[0]);
+                    subscription.N_Coord_Y = Double.parseDouble(strCoord_N[1]);
+                    l++;
+                    } else{
+                    strCoord_E = line.split("; ");
+                        var = strCoord_E[0].split(", ");
+                    subscription.E_Coord_minX = Double.parseDouble(var[0]);
+                    subscription.E_Coord_maxX = Double.parseDouble(var[1]);
+                        var = strCoord_E[1].split(", ");
+                    subscription.E_Coord_minY = Double.parseDouble(var[0]);
+                    subscription.E_Coord_maxY = Double.parseDouble(var[1]);
+                    subscription.setPointsMatched(getNumberPointsInRegion(subscription.E_Coord_minX,
+                                                                          subscription.E_Coord_minY,
+                                                                          subscription.E_Coord_maxX,
+                                                                          subscription.E_Coord_maxY,
+                                                                          pointList ));
+                    subsList.add(subInitId,subscription);
+                    subInitId++;
+                    l=0;
+                    }
+            }
+            input.close();
+        }catch (FileNotFoundException e) {e.printStackTrace();}
+        catch (IOException e) {e.printStackTrace();}
+
+        Benchmark.outPutMessages ="    {Set Subscription's List : Done}\n";
+        Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+        
+        return subsList;
+    }
+
+   /** Create the membership's list from the subscription's list and the broker's list
+   * @param subsList : the subscription's list
+   * @param brokersList : the broker's list
+   * @return membershipList : the membership's list
+   */
+   public ArrayList<Membership> setMembershipList (ArrayList<Subscription> subsList, ArrayList<Broker> brokersList){
+        this.subsList = subsList;
+        this.brokersList = brokersList;
+        double minDistance = 0;
+        int idBroker = 0;
+        double[] pS = new double[2]; //Subs Coord
+        double[] pB = new double[2]; //Broker Coord
+        double[] brokerCoord = new double[2];
+        String regionOfBroker = "NULL";
+        Membership nearest;
+
+        for(int s=0; s<subsList.size(); s++){
+            pS[0] = subsList.get(s).N_Coord_X;
+            pS[1] = subsList.get(s).N_Coord_Y;
+            for(int b=0; b< brokersList.size(); b++){
+                pB[0] = brokersList.get(b).coord_X;
+                pB[1] = brokersList.get(b).coord_Y;
+                if (( b==0 )||( getDistance(pS,pB) <= minDistance )){
+                    minDistance = getDistance(pS,pB);
+                    idBroker = brokersList.get(b).id;
+                    regionOfBroker = brokersList.get(b).region;
+                    brokerCoord[0] = pB[0];
+                    brokerCoord[1] = pB[1];
+                }
+            }
+             nearest = new Membership();
+             nearest.idOfSub = subsList.get(s).id;
+             nearest.regionOfBroker = regionOfBroker;
+             nearest.idOfBroker = idBroker;
+             nearest.subCoord[0] = pS[0];
+             nearest.subCoord[1] = pS[1];
+             nearest.brokerCoord[0] = brokerCoord[0];
+             nearest.brokerCoord[1] = brokerCoord[1];
+             nearest.distance = minDistance;
+             minDistance = 0;
+             membershipList.add(s,nearest);
+           
+        }
+     return membershipList;
+    }
+
+  /** Generate the popularity's distribution of the points
+   * @param pointsList : the point's list
+   * @param subscriptionList : the cell's list
+   * @return pointsList
+   */
+   public ArrayList<Point> pointsPopularity(ArrayList<Point> pointsList,
+                                            ArrayList<Subscription> subscriptionList){
+    int subsCounter = 0; // number of subscriptions matching a given point
+    int pointsMatch, pointsNoMatch;
+    double[] SubRange = new double[4];
+    double x , y, Counter;
+    String subLine = "";
+    String popularityLine = "";
+
+    for (int p=0; p < pointsList.size(); p++){
+        x = pointsList.get(p).getPoint_X();
+        y = pointsList.get(p).getPoint_Y();
+        for (int s=0; s < subscriptionList.size(); s++){
+            SubRange[0] = subscriptionList.get(s).E_Coord_minX;
+            SubRange[1] = subscriptionList.get(s).E_Coord_minY;
+            SubRange[2] = subscriptionList.get(s).E_Coord_maxX;
+            SubRange[3] = subscriptionList.get(s).E_Coord_maxY;
+            if ((x>=SubRange[0])&&(x<=SubRange[2])&&
+                (y>=SubRange[1])&&(y<=SubRange[3])){
+              subsCounter++;
+              subscriptionList.get(s).setCellsMatched(pointsList.get(p).getIdOfCell()); //save the  id if of the point matched by the subscription in a table
+            }
+
+        }
+        subLine = subLine + p +" "+ subsCounter+ " "+ (((double)subsCounter*100) / (double)Config.NUM_OF_SUBS) +"\n";
+        pointsList.get(p).setMatchedSubs(subsCounter);
+        pointsList.get(p).setMatchedSubsPercentage( (double)(((double)subsCounter*100) / (double)Config.NUM_OF_SUBS) );
+       
+
+        subsCounter = 0;
+    }
+
+    Counter=0;
+    pointsNoMatch = 0;
+    for (int i=1; i<=10 ; i++){
+        pointsMatch = 0;
+        for (int e=0; e < pointsList.size(); e++){
+            if ((((i-1)*10)<pointsList.get(e).getMatchedSubsPercentage()) &&
+                    (pointsList.get(e).getMatchedSubsPercentage()<=(i*10))){
+                    pointsMatch++;// point's number that the % of subs fit the given % intervall
+            }else if(pointsList.get(e).getMatchedSubsPercentage() == 0.0 ){
+              pointsNoMatch++; // point's number that don't match any subscriptions
+            } 
+        }
+        if (i!=1)Counter = Counter + pointsMatch ;  // cumulate the matched point's number
+        else Counter = Counter + pointsMatch + pointsNoMatch; // cumulate with the non matched point's
+
+        popularityLine = popularityLine +
+                (i*10) +" %Subs "+
+                pointsMatch+" Points "+
+                (double)(((double)Counter*100)/(double)Benchmark.MAX_POINTS)+" %Points\n";
+    }
+    popularityLine = "0 %Subs "+
+            (pointsNoMatch/10) +" NoPoints "+
+            (double)(((double)pointsNoMatch*10)/(double)Benchmark.MAX_POINTS)+ " %Points not matched\n"+
+            popularityLine;
+
+    ligneToGnuplot(Benchmark.POINT_MATCHED_SUBS_FILE,subLine);
+    ligneToGnuplot(Benchmark.POINTS_POPULARITY_FILE,popularityLine);
+
+    return pointsList;
+   }
+
+   /** Generate the locality's distribution of the points
+   * @param pointsList : the point's list
+   * @param subsList : the subscription's list
+   * @param brokersList : the broker's list
+   * @return pointsList
+   */
+   public ArrayList<Point> pointsLocality(ArrayList<Point> pointsList,
+                                          ArrayList<Subscription> subsList,
+                                          ArrayList<Broker> brokersList ){
+
+        int brokerCounter = 0;
+        int pointsCounter=0;
+        int pointsMatch, pointsNoMatch;
+        double[] pS = new double[4];
+        double x, y;
+        String brokerLine = "";
+        String localityLine = "";
+
+
+        for (int p=0; p < pointsList.size(); p++){
+            x = pointsList.get(p).getPoint_X();
+            y = pointsList.get(p).getPoint_Y();
+
+            for (int s=0; s < subsList.size(); s++){
+                pS[0] = subsList.get(s).E_Coord_minX;
+                pS[1] = subsList.get(s).E_Coord_minY;
+                pS[2] = subsList.get(s).E_Coord_maxX;
+                pS[3] = subsList.get(s).E_Coord_maxY;
+                if ((x>=pS[0])&&(x<=pS[2])&&(y>=pS[1])&&(y<=pS[3])){
+                  if (membershipList.get(s).idOfSub == subsList.get(s).id){
+                      brokersList.get(membershipList.get(s).idOfBroker).setIdOfCellsMatched(pointsList.get(p).getIdOfCell());
+                      pointsList.get(p).setBrokersList(membershipList.get(s).idOfBroker);
+                      brokerCounter = pointsList.get(p).getBrokersListSize();
+                  }
+               }
+            }
+            brokerLine = brokerLine + p +" "+ brokerCounter+" "+(((double)brokerCounter*100)/(double) brokersList.size())+"\n";
+
+            pointsList.get(p).setMatchedBrokers(brokerCounter);
+            pointsList.get(p).setMatchedBrokersPercentage(((double)brokerCounter*100)/(double) brokersList.size());
+            brokerCounter = 0;
+        }
+
+        pointsNoMatch = 0;
+        for (int i=1; i<=10 ; i++){
+            pointsMatch = 0;
+            for (int e=0; e < pointsList.size(); e++){
+                if ((((i-1)*10)< pointsList.get(e).getMatchedBrokersPercentage()) &&
+                        (pointsList.get(e).getMatchedBrokersPercentage()<=(i*10))){
+                        pointsMatch++;
+                }else if (pointsList.get(e).getMatchedBrokersPercentage()== 0.0 ) pointsNoMatch++; // point's number that don't match subs
+            }
+            if (i!=1) pointsCounter = pointsCounter + pointsMatch ;  // cumulate the matched point's number
+            else pointsCounter = pointsCounter + pointsMatch + pointsNoMatch;
+            localityLine = localityLine +(i*10)+" %Brokers "+
+                    pointsMatch+" Points "+
+                    (double)(((double)pointsCounter*100)/(double)Benchmark.MAX_POINTS)+" %Points\n";
+        }
+
+        localityLine = "0 %Brokers "+
+                pointsNoMatch/10 +" NoPoints "+
+                (double)(((double)pointsNoMatch*10)/(double)Benchmark.MAX_POINTS)+ " %Points not matched\n"+
+                localityLine;
+
+        ligneToGnuplot(Benchmark.EVENT_MATCHED_BROKER_FILE,brokerLine);
+        ligneToGnuplot(Benchmark.POINTS_LOCALITY_FILE,localityLine);
+
+        return pointsList;
+   }
+
+   /** Generate the popularity's distribution of the cells
+   * @param subsList : the subscription's list
+   * @param  cellsNumber : the number of the grid's cells
+   */
+   public void cellsPopularity(ArrayList<Subscription> subsList,int cellsNumber){
+       int subCounter=0;
+       int subCounterNoMatch = 0;
+       double percentage = 0;
+       String ligne="";
+
+       for (int i=1; i<=10 ; i++){
+                subCounter=0;
+                for (int s=0; s < subsList.size(); s++){
+                    percentage = (double)(((double)subsList.get(s).getCellsMatchedSize()*100)/(double)cellsNumber);
+                    //System.out.println(percentage);
+                    if ((0<percentage) && (percentage<=(i*10))){
+                        subCounter++;
+                    }else if (0.0 == percentage) subCounterNoMatch++;
+                }
+                ligne = ligne + (i*10) +" %Events "+  (double)(((double)subCounter*100)/(double)subsList.size())+" %Subs\n";
+       }
+            ligne = "0 %Events 0 %Subs\n"+ligne;
+            ligneToGnuplot(Benchmark.CELLS_POPULARITY_FILE,ligne);
+   }
+
+   /** Generate the locality's distribution of the cells
+   * @param brokersList : the broker's list
+   * @param  cellsNumber : the number of the grid's cells
+   */
+   public void cellsLocality(ArrayList<Broker> brokersList,int cellsNumber){
+       int brokerCounter=0;
+       int brokerCounterWMatch = 0;
+       double percentage = 0;
+       String ligne="";
+
+       for (int i=1; i<=10 ; i++){
+                brokerCounter=0;
+                for (int s=0; s < brokersList.size(); s++){
+                    percentage = (double)(((double)brokersList.get(s).getCellsMatchedSize()*100)/(double)cellsNumber);
+                    if ((0<percentage) && (percentage<=(i*10))){
+                        brokerCounter++;
+                    }else if (0.0 == percentage) brokerCounterWMatch++;
+                }
+                ligne = ligne + (i*10) +" %Events "+  (double)(((double)brokerCounter*100)/(double)brokersList.size())+" %Brokers\n";
+       }
+            ligne = "0 %Events 0 %Brokers\n"+ligne;
+            ligneToGnuplot(Benchmark.CELLS_LOCALITY_FILE,ligne);
+   }
+
+  /** Write the subscription's list and the broker'slist into tow files
+   * @param subFileName : the subscription's file name
+   * @param brokFileName : the broker's file name
+   * @param pointsList : the point's list
+   * @param cellsList : the cell's list
+   */
+   public void subsListAndBrokersListToGnuplot (String subFileName, String brokFileName,
+                                                ArrayList<Point> pointsList,
+                                                ArrayList<GridCell> cellsList  ){
+
+      Benchmark.outPutMessages ="    {Subs list to Gnuplot : Begin }\n";
+      Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+      double minX , minY , maxX, maxY , x, y ;
+      int id;
+      try{
+          FileWriter fstream = new FileWriter(subFileName);
+          BufferedWriter  out = new BufferedWriter(fstream);
+          for (int i = 0; i < subsList.size(); i++) {
+             id = subsList.get(i).id;
+             minX = subsList.get(i).E_Coord_minX;
+             minY = subsList.get(i).E_Coord_minY;
+             maxX = subsList.get(i).E_Coord_maxX;
+             maxY = subsList.get(i).E_Coord_maxY;
+             String region = subsList.get(i).region;
+
+            out.write(id+ " "+region+" "+subsList.get(i).getPointsMatched()+" "+minX+" "+maxX+" "+minY+" "+maxY+"\n");
+          }
+          out.close();
+      }catch (IOException ex) {System.err.println(ex);}
+      Benchmark.outPutMessages ="    {Subs list to Gnuplot : Done.}\n";
+      Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+
+
+      Benchmark.outPutMessages ="    {Brokers list to Gnuplot : Begin }\n";
+      Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+
+      try{
+       FileWriter fstream = new FileWriter(brokFileName);
+       BufferedWriter  out = new BufferedWriter(fstream);
+       for (int i = 0; i < brokersList.size(); i++) {
+               id = brokersList.get(i).id;
+               x = brokersList.get(i).coord_X;
+               y = brokersList.get(i).coord_Y;
+               String r = brokersList.get(i).region;
+              out.write(id+ " " + x +" "+ y+" "+r+"\n");
+          }
+          out.close();
+          }catch (IOException ex) {System.err.println(ex);}
+       Benchmark.outPutMessages ="    {Brokers list to Gnuplot : Done.}\n";
+       Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+}
+
+   /** Write a ligne in the file
+   * @param fileName : the file's name
+   * @param ligne : the line to be written
+   */
+   public void ligneToGnuplot(String fileName, String ligne){
+  Benchmark.outPutMessages ="    {Gnuplot Exporting : Begin }\n";
+  Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+  try{
+   FileWriter fstream = new FileWriter(fileName);
+   BufferedWriter  out = new BufferedWriter(fstream);
+      out.write(ligne);
+      out.close();
+      }catch (IOException ex) {System.err.println(ex);}
+   Benchmark.outPutMessages ="    {Exporting Gnuplot Done.}\n";
+   Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+  }
+
+  /** Write the membership list into a file
+   * @param membershipFileName : the membership's file name
+   * @param membershipList : the membership's list
+   */
+   public void membershipListToGnuplot(String membershipFileName, ArrayList<Membership> membershipList){
+   Benchmark.outPutMessages ="    {Membership List To Gnuplot : Begin }\n";
+   Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+   try{
+	FileWriter fstream = new FileWriter(membershipFileName);
+	BufferedWriter  out = new BufferedWriter(fstream);
+	for (int i = 0; i < membershipList.size(); i++) {
+            int idSub = membershipList.get(i).idOfSub;
+            int idBroker = membershipList.get(i).idOfBroker;
+            double[] pB = membershipList.get(i).brokerCoord;
+            double[] pS = membershipList.get(i).subCoord;
+            String r = membershipList.get(i).regionOfBroker;
+            double distance = membershipList.get(i).distance;
+            out.write(idSub+ " " +pS[0]+ " " +pS[1]+ " " + idBroker + " " +pB[0]+ " " + pB[1]+" "+r+ " "+distance+"\n");
+        }
+        out.close();
+    }catch (IOException ex) {System.err.println(ex);}
+    Benchmark.outPutMessages ="    {Membership List To Gnuplot : Done.}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+   }
+
+  /** Calculate the distance between tow points in the network space
+   * @param p1 : the subscription's coordinates
+   * @param p2 : the broker's coordinates
+   * @return distance
+   */
+   public double getDistance(double[] p1, double[] p2) {
+        double distance = 0 ;
+        for (int i = 0; i < p1.length; i++) {
+             distance += Math.pow((p1[i] - p2[i]), 2);
+        }
+        distance = Math.sqrt(distance);
+        return distance;
+    }
+
+   /** Calculate the number of points in a region
+   * @param minX, minY, maxX, maxY : the range
+   * @param pointList : list of points
+   * @return count: the number of points
+   */
+   public int getNumberPointsInRegion(double minX, double minY, double maxX, double maxY,
+                                      ArrayList<Point> pointList){
+       int count = 0;
+       double x;
+       double y;
+            for(int c=0; c< pointList.size(); c++){
+                x = pointList.get(c).getPoint_X();
+                y = pointList.get(c).getPoint_Y();
+                if((x>=minX)&&(x<=maxX)&&(y>=minY)&&(y<=maxY))
+                    count++;
+            }
+       return count;
+    }
+
+}

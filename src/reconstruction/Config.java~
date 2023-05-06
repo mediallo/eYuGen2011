@@ -1,0 +1,103 @@
+package reconstruction;
+
+/**
+ * User configuration
+ * @author Albert
+ *
+ */
+public class Config {
+	/*
+	 * Input files		
+	 */
+	public static String EVENT_FILE = "testData/messageInfo.txt";
+	public static final String INTEREST_FILE = "testData/interests.txt";		
+	public static final String TOPIC_FILES[] = new String[] {
+		"testData/categories1.txt", "testData/categories2.txt"};	
+	public static final String IP_COUNTRY_FILE = "testData/ip2country.txt";
+	public static final String IP_COORD_FILE = "testData/coordinates.txt";
+	
+	/*
+	 * Basic settings
+	 */
+	public static final int NUM_OF_REGIONS = 3;
+	public static final int EVENT_DIM = 2;
+	public static int NETWORK_DIM = 5;	
+	public static final double EVENT_SPACE_MIN = -10000;
+	public static final double EVENT_SPACE_MAX = 10000;
+	public static final long SUB_RANDOM_SEED = 4531;//System.currentTimeMillis();
+	public static final long BROKER_RANDOM_SEED = 839;//System.currentTimeMillis();
+		
+	/*
+	 * Subscriptions
+	 * A. SUB_FILE --- output file name
+	 * B. SHIFT_RECT --- shift the boundaries of subscriptions in the event space
+	 */
+	public static String SUB_FILE = 
+		"outputs/subs.txt";
+	public static final int NUM_OF_SUBS = 10000;
+	public static final boolean SHIFT_RECT = false;
+	
+	/*
+	 * Brokers
+	 * A. generateBrokerNetwork is optional
+	 * B. NUM_OF_BROKERS consists of a list of integers; The i^th integer denotes
+	 *    the number of brokers in the i^th geographic regions.
+	 */
+	public static final boolean generateBrokerNetwork = true;
+	public static String BROKER_FILE = "outputs/brokers.txt";
+	public static final int NUM_OF_BROKERS[] = new int[]{60, 60, 60};
+		
+	/*
+	 * Hot interest removal
+	 */
+	public static final boolean PRUNE_HOT_INTERESTS = false;
+	public static final int NUM_OF_HOT_INTERESTS = 100; 
+	
+	/*
+	 * Interest diffusion
+	 */
+	public static final boolean INTEREST_DIFFUSION  = false;
+	public static final double smoothingP = 0.9;	
+	
+	/*
+	 * Interest generalization
+	 * Three modes: NONE, PROPORTIONAL, UNIFORM
+	 * Proportional: Every interest propagates the same fraction of subscription
+	 * 				 count to its parents. 
+	 * Uniform: Every child of an interest propagates the same amount of
+	 * 			subscription count to the interest.
+	 */
+	public static final Param.InterestGeneralizationMode GROUP_HIERARCHY_MODE = 
+		Param.InterestGeneralizationMode.None;
+	public static final double HIERARCHY_FRAC = 0.1;
+	
+	/*
+	 * Subscriber count ratio across geographic regions:
+	 * If the ratio has to be modified, the new ratio is proportional to the
+	 * one specified in REGION_RATIO, in which the i^th number represents
+	 * the probability of a sub locating in the i^th geographic region.	      
+	 */
+	public static final Param.SubsRatioMode SUBS_RATIO_MODE = 
+		Param.SubsRatioMode.ModifyRatio;
+	public static double[] REGION_RATIO = new double[]{4/9., 1/9., 4/9.};
+	
+	/*
+	 * Configuration for generating event distribution.
+	 * 1. For event dimension = 2, PARTITION_N = 200 means the event space
+	 * will be partitioned into 200 x 200 grid cells of equal size. We
+	 * associate every cell with the probability that an event is generated
+	 * in that cell. The total probability (summation over the probabilities
+	 * of all cells) is 1. 
+	 * 2. BANDWIDTH is the bandwidth of the user specified kernel.
+	 * 3. If REPORT_ALL = false, only the cells that have probability > 0
+	 * will be written to the output file.
+	 * 4. Repeat additional EXTRA_ITER_KERNEL iterations to reduce data skewness  
+	 */
+	public static String EVENT_DISTRI_FILE = 
+		"outputs/eventDistri.txt";
+	public static final Param.KernelFunc KERNEL_FUNC = Param.KernelFunc.epanechnikov;	
+	public static final int PARTITION_N = 200;
+	public static final int BANDWIDTH = 10;	
+	public static final boolean REPORT_All = false; 
+	public static final int EXTRA_ITER_KERNEL = 0;
+}

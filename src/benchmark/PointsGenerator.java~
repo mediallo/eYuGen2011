@@ -1,0 +1,320 @@
+package benchmark;
+
+import dataStructures.Category;
+import reconstruction.CategoryHierarchy;
+
+
+import java.io.BufferedWriter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+
+import java.util.ArrayList;
+import java.util.Random;
+
+
+/**
+ * Class PointsGenerator : generate event's points
+ * @author Mohamed Barkallah
+ *
+ * @param cellsFile : the event's input file
+ * @param idOfCell : id of an event
+ * @param maxPoints : number of points to be generated in the event space
+ * @param pointsList : the points list
+ * @param catgDimX : the categorie hierarchy of the topic dimension
+ * @param catgDimY : the categorie hierarchy of the language dimension
+ */
+
+public class PointsGenerator {
+    
+    private String cellsFile;
+    private int idOfCell ;
+    private int maxPoints;
+    private ArrayList<Point> pointsList;
+    private ArrayList<Category> catgDimX = new ArrayList<Category>();
+    private ArrayList<Category> catgDimY = new ArrayList<Category>();
+
+  /**
+   * PointsGenerator Constructor
+   * @param cellsFile : the event file
+   * @param pointsNumber: the number of points to be generated
+   */
+public PointsGenerator(String eventFile, int pointsNumber){
+    this.cellsFile = eventFile;
+    this.maxPoints = pointsNumber;
+    this.idOfCell = 0; //Initialise the Cell's id
+    this.catgDimX = CategoryHierarchy.catgDim0;
+    this.catgDimY = CategoryHierarchy.catgDim1;
+}
+
+  /**
+   * Create the event cell's list from the events file.
+   * @return cellsList : the list of events
+   */
+public ArrayList<GridCell> getCellsList() {
+    File file = new File(cellsFile);
+    BufferedReader input = null;
+    ArrayList<GridCell> cellsList = new ArrayList<GridCell>();
+
+    Benchmark.outPutMessages = "    {Get the Event Cells List : Begin}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+    try {
+            input = new BufferedReader(new FileReader(file));
+            String line = null;
+            
+            if ((line = input.readLine()) != null){
+                String[] strs = line.split(";");
+            }
+            
+            while ((line = input.readLine()) != null) {
+                GridCell cell = new GridCell() ;
+                
+                    String[] strs = line.split(";");
+                cell.id = idOfCell;
+                    String[] strmin = strs[0].split(",");
+                cell.minRange[0]= Double.parseDouble(strmin[0]);
+                cell.maxRange[0]= Double.parseDouble(strmin[1]);
+                    String[] strmax = strs[1].split(",");
+                cell.minRange[1]= Double.parseDouble(strmax[0]);
+                cell.maxRange[1]= Double.parseDouble(strmax[1]);
+                cell.proba = Double.parseDouble(strs[2]);
+                
+                cellsList.add(idOfCell,cell);
+                idOfCell++;
+            }
+ 	input.close();
+        Benchmark.outPutMessages = "    {Get the Event Cells List : Done}\n";
+        Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+ 	}  
+        catch (FileNotFoundException e) {e.printStackTrace();}
+        catch (IOException e) {e.printStackTrace();}
+
+    return cellsList;
+}
+
+  /**
+   * Create the event points list, assigne the number of points to be generatedfor
+   * in each cell from the cell's probability.
+   * @param inputCellsList: the event cells list
+   * @return pointsList : return the list of the event points
+   */
+public ArrayList<Point> setPointsList(ArrayList<GridCell> inputCellsList){
+
+    Benchmark.outPutMessages = "    {Create the Points List : Begin}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText());
+
+    pointsList = new ArrayList<Point>();
+    ArrayList<GridCell> updateCellsList = new ArrayList<GridCell>();
+    Point point ;
+    int idPoint = 0;
+    double X = 0.0;
+    double Y = 0.0;
+    boolean validX = false;
+    boolean validY = false;
+    boolean exist;
+    // generate the list of the cells that contains all the event points
+    updateCellsList = pointDistributionOverCellsProba(inputCellsList);
+    
+    /*Generate point's coordinates (x,y) that fits the 
+    * categorie's range (topic, language).
+    *
+    */
+    for (int c=0 ; c<updateCellsList.size(); c++){
+      int p=0;
+      exist= false;
+      while ( p < updateCellsList.get(c).pointsNumber){
+
+            X = getRandomDouble(updateCellsList.get(c).minRange[0], updateCellsList.get(c).maxRange[0]);
+            Y = getRandomDouble(updateCellsList.get(c).minRange[1], updateCellsList.get(c).maxRange[1]);
+
+            /*validX = isValidPoint(X,0); // check if the X is a valide topic
+            while(!validX){
+              X = getRandomDouble(updateCellsList.get(c).minRange[0], updateCellsList.get(c).maxRange[0]);
+              validX = isValidPoint(X,0);  // check if the X is a valide topic
+            }
+            validY = isValidPoint(Y,1);  // check if the Y is a valide language
+            while(!validX){
+              Y = getRandomDouble(updateCellsList.get(c).minRange[1], updateCellsList.get(c).maxRange[1]);
+              validY = isValidPoint(Y,1); // check if the Y is a valide language
+            }*/
+
+            for (int i=0; i < pointsList.size(); i++ ){
+                if( (pointsList.get(i).getPoint_X()== X)&&
+                    (pointsList.get(i).getPoint_Y()== Y)){
+                  exist = true;
+                  break;
+                }
+            }
+             validX = true;
+             validY = true;
+            if (validX && validY && !exist){ // if the coordinate are valid, we can add the point to the point's list
+              p++;
+              point = new Point();
+              point.setCoordinatesOfPoint(X,Y);
+              point.setPointId(idPoint);
+              point.setMatchedSubs(0);
+              point.setMatchedSubsPercentage(0.0);
+              point.setEventCellId((int)updateCellsList.get(c).id);
+             
+              pointsList.add(point);
+              idPoint++;              
+              validX = false;  validY = false;
+            }
+            exist=false;
+        }
+    }
+
+   Benchmark.outPutMessages += "    Event Points (pubs) Numbers: "+pointsList.size()+"\n";
+   Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+
+    Benchmark.outPutMessages = "    {Create the Event Points List : End}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+   return pointsList;
+}
+
+  /**
+   * Distributes the number of points over the cells, proportional to the
+   * probability that a point is generated in that cell
+   * @param cellsList : the list of grid cells
+   * @return cellsUpdatedList: the list of grid cells with the number of points to each cell.
+   */
+public ArrayList<GridCell> pointDistributionOverCellsProba (ArrayList<GridCell> cellsList){
+  ArrayList<GridCell> cellsUpdatedList = cellsList;
+  int totalPointsNumber =0;
+  Random generator = new Random(cellsUpdatedList.size()*System.currentTimeMillis());
+  double r = generator.nextDouble();
+  while(totalPointsNumber < this.maxPoints){
+      r = generator.nextDouble();
+      int index = (int) (cellsUpdatedList.size() - 1)/2;
+      int min = -1;
+      int max = cellsUpdatedList.size() ;
+      while(true) { // repeat until we found the index of the cell with probability ~= r
+        if (cumulativeProbability(cellsUpdatedList, index) > r) {
+          max = index;
+          index = (int) Math.ceil((index + min + 0.)/2);
+        } else if ((index < (cellsUpdatedList.size() - 1) ) && (cumulativeProbability(cellsUpdatedList, (index+1)) < r)) {
+                   min = index;
+                   index = (int)(index + max) /2;
+
+                } else {
+                     break;
+                }
+     }
+     if (cellsUpdatedList.get(index).proba != 0.0){
+       cellsUpdatedList.get(index).pointsNumber++ ;
+       totalPointsNumber++;
+     }
+ }
+
+  if (totalPointsNumber < this.maxPoints )
+    System.out.println("pointDistributionOverCellsList: the points number are not generated: " + totalPointsNumber + " < "+this.maxPoints);
+
+  /*for (int c=0; c < cellsUpdatedList.size(); c++){
+        System.out.println("cell ("+c+") = "+cellsUpdatedList.get(c).pointsNumber);
+  }*/
+  return cellsUpdatedList;
+}
+
+  /**
+   * Calculate the cumulative propabilite from the cell 0 to the cell indexCell
+   * probability that a point is generated in that cell
+   * @param cellsList : the list of grid cells
+   * @return cumulativeProbs: the summation of probability
+   */
+public double cumulativeProbability(ArrayList<GridCell> cellsList, int indexCell){
+  double cumulativeProbs = 0.0;
+  for (int c=0; c < indexCell; c++) cumulativeProbs += cellsList.get(c).proba;
+  return cumulativeProbs;
+}
+
+  /**
+   * Save the point's list to a filename, using backspace separator
+   * the file can be readed by Gnuplot
+   * @param pointList : the point's list
+   * @param filename : the name of the output file
+   */
+public void pointsToGnuplot (ArrayList<Point> pointList, String filename ){
+    Benchmark.outPutMessages = "    {Begin Point Gnuplot Exporting...}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+    double pointId, x, y, idCell , nbSubs ;
+    try{
+	FileWriter fstream = new FileWriter(filename);
+	BufferedWriter  out = new BufferedWriter(fstream);
+	for (int i = 0; i < pointList.size(); i++) {
+            pointId = pointList.get(i).getIdOfPoint();
+            x = pointList.get(i).getPoint_X();
+            y = pointList.get(i).getPoint_Y();
+            idCell = pointList.get(i).getIdOfCell();
+            nbSubs = pointList.get(i).getMatchedSubs();
+            /*the line is:
+            * the point's id,  Xcoord, Ycoord , cell's id and the number of subscription matching the point
+            */
+            out.write(pointId+ " " + x +" "+ y+" "+idCell+ " "+nbSubs+"\n");
+        }
+        out.close();
+        }catch (IOException ex) {System.err.println(ex);}
+     Benchmark.outPutMessages = "    {Point Exporting Gnuplot Done.}\n";
+     Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+}
+
+  /**
+   * Save the cell's list to the filename,
+   * using backspace separator,
+   * the file can be readed by Gnuplot.
+   */
+public void cellsToGnuplot (ArrayList<GridCell> eventList, String filename ){
+    Benchmark.outPutMessages = "    {Begin Cell Gnuplot Exporting...}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+    try{
+       FileWriter fstream = new FileWriter(filename);
+       BufferedWriter  out = new BufferedWriter(fstream);
+       for (int i = 0; i < eventList.size(); i++) {
+              int idCell = (int)eventList.get(i).id;
+              double minX = eventList.get(i).minRange[0];
+              double minY = eventList.get(i).minRange[1];
+              double maxX = eventList.get(i).maxRange[0];
+              double maxY = eventList.get(i).maxRange[1];
+              out.write(idCell+ " " + minX +" "+ minY +" "+ maxX +" "+ maxY+"\n");
+        }
+        out.close();
+     }catch (IOException ex) {System.err.println(ex);}
+     Benchmark.outPutMessages = "    {Cell Exporting Gnuplot Done.}\n";
+     Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+}
+
+  /**
+   * Select a random double from range [min,max]
+   * @param min : min range
+   * @param max : max range
+   * @return double
+   */
+public double getRandomDouble (double min, double max){
+    return min + Math.floor(Math.random()*(max+1-min));
+}
+
+  /**
+   * Check if the choosen coordinate belongs to a valid category
+   * @param value : the X or the Y coordinate of the point in the event space
+   * @param dimension : dimension of the event space
+   * @return valid : the point have a good coordinate if valid = true
+   */
+public boolean isValidPoint(double value, int dimension){
+  boolean valid = true;
+  if (dimension == 0){
+    for (int i=0; i< catgDimX.size();i++){ // verify X
+      if( ( value > catgDimX.get(i).valueMin) && (value < catgDimX.get(i).valueMax) )
+        valid = true;
+    }
+  }else{
+    for (int i=0; i< catgDimY.size();i++){ // verify X
+      if( ( value > catgDimY.get(i).valueMin) && (value < catgDimY.get(i).valueMax) )
+        valid = true;
+    }
+  }
+  return valid;
+}
+
+}

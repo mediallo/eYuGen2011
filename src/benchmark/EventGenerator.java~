@@ -1,0 +1,338 @@
+package benchmark;
+
+import dataStructures.Category;
+import reconstruction.CategoryHierarchy;
+
+
+import java.io.BufferedWriter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Random;
+
+/**
+ *
+* @author Mohamed Barkallah
+ */
+public class EventGenerator {
+
+private String eventFile;
+private int cellID ;
+private int maxPoints;
+private ArrayList<theEventPoint> eventPointList;
+private ArrayList<Category> catgDimX = new ArrayList<Category>();
+private ArrayList<Category> catgDimY = new ArrayList<Category>();
+
+public EventGenerator(String eventFile, int event_points){
+    this.eventFile = eventFile;
+    this.maxPoints = event_points;
+    this.cellID = 0; //Initialise the Cell ID
+    this.catgDimX = CategoryHierarchy.catgDim0;
+    this.catgDimY = CategoryHierarchy.catgDim1;
+}
+
+/*Create the event cell's list from the events file.
+*@return ArrayList<theEventCell> : the list of events
+*/
+public ArrayList<theEventCell> GetEventCellsList() {
+    File file = new File(eventFile);
+    BufferedReader input = null;
+    ArrayList<theEventCell> eventCellList = new ArrayList<theEventCell>();
+
+    Benchmark.outPutMessages = "    {EventRangeExtractor : Begin}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+    try {
+            input = new BufferedReader(new FileReader(file));
+            String line = null;
+            
+            // Read First line
+            if ((line = input.readLine()) != null){
+                String[] strs = line.split(";");
+                //Benchmark.outPutMessages += "     Total Imported Cells : "+strs[0]+" Event Space Dimention :"+strs[1]+"\n";
+                //Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+            }
+            while ((line = input.readLine()) != null) {
+                theEventCell theCell = new theEventCell() ;
+                
+                String[] strs = line.split(";");
+              
+                theCell.Id = cellID;
+                    String[] strmin = strs[0].split(",");
+                theCell.minRange[0]= Double.parseDouble(strmin[0]);
+                theCell.maxRange[0]= Double.parseDouble(strmin[1]);
+                    String[] strmax = strs[1].split(",");
+                theCell.minRange[1]= Double.parseDouble(strmax[0]);
+                theCell.maxRange[1]= Double.parseDouble(strmax[1]);
+                theCell.proba = Double.parseDouble(strs[2]);
+                
+                eventCellList.add(cellID,theCell);
+                cellID++;
+              
+            }
+ 	input.close();
+        Benchmark.outPutMessages = "    {EventRangeExtractor : Done}\n";
+        Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+ 	}  
+        catch (FileNotFoundException e) {e.printStackTrace();}
+        catch (IOException e) {e.printStackTrace();}
+
+    return eventCellList;
+}
+
+
+/* Create the event points list, assigne the number of points to be generatedfor 
+*  in each cell from the cell's probability.
+*
+*@param inputEventCellList: the event cells list
+*@return ArrayList<theEventPoint> : return the list of the event points 
+*/
+public ArrayList<theEventPoint> SetEventPointList(ArrayList<theEventCell> inputEventCellList){
+
+    eventPointList = new ArrayList<theEventPoint>();
+    ArrayList<theEventCell> cellList = new ArrayList<theEventCell>();
+    theEventPoint pointXY ;
+    double X = 0;
+    double Y = 0;
+    boolean validX = false;
+    boolean validY = false;
+
+    Benchmark.outPutMessages = "    {SetEventPointList : Begin}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText());
+
+    cellList = PointsGenerator(maxPoints, inputEventCellList );
+    
+    for (int p=0 ; p<cellList.size(); p++){
+                X = GetRandomDouble(cellList.get(p).minRange[0], cellList.get(p).maxRange[0]);
+                validX = isValidPoint(X,0);
+                while(!validX){
+                  X = GetRandomDouble(cellList.get(p).minRange[0], cellList.get(p).maxRange[0]);
+                  validX = isValidPoint(X,0);
+                }
+
+                Y = GetRandomDouble(cellList.get(p).minRange[1], cellList.get(p).maxRange[1]);
+                validY = isValidPoint(Y,1);
+                while(!validX){
+                  Y = GetRandomDouble(cellList.get(p).minRange[1], cellList.get(p).maxRange[1]);
+                  validY = isValidPoint(Y,1);
+                }
+ 
+                if (validX && validY){
+                  pointXY = new theEventPoint();
+                  pointXY.SetCoordPoint(X,Y);
+                  pointXY.SetPointID(p);
+                  pointXY.SetMatchedSubs(0);
+                  pointXY.SetMatchedSubsPercent(0.0);
+                  pointXY.SetEventCellID((int)cellList.get(p).Id);
+
+                  eventPointList.add(pointXY);
+                  validX = false;  validY = false;
+                }
+        }
+
+
+   Benchmark.outPutMessages += "    Event Points (pubs) Numbers: "+eventPointList.size()+"\n";
+   Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+
+   Benchmark.outPutMessages = "    {SetEventPointList : End}\n";
+   Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+    return eventPointList;
+    }
+
+public void EventPointsExpToGnuplot (ArrayList<theEventPoint> ePList, String filename ){
+    Benchmark.outPutMessages = "    {Begin Point Gnuplot Exporting...}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+    try{
+	FileWriter fstream = new FileWriter(filename);
+	BufferedWriter  out = new BufferedWriter(fstream);
+	for (int i = 0; i < ePList.size(); i++) {
+            double pointID = ePList.get(i).GetID();
+            double x = ePList.get(i).GetCoordPoint_X();
+            double y = ePList.get(i).GetCoordPoint_Y();
+            double cellID = ePList.get(i).GetCellID();
+            double nbSubs = ePList.get(i).GetMatchedSubs();
+
+            out.write(pointID+ " " + x +" "+ y+" "+cellID+ " "+nbSubs+"\n");
+        }
+        out.close();
+        }catch (IOException ex) {System.err.println(ex);}
+     Benchmark.outPutMessages = "    {Point Exporting Gnuplot Done.}\n";
+     Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+}
+
+public void EventCellsExpToGnuplot (ArrayList<theEventCell> eCList,String filename ){
+    Benchmark.outPutMessages = "    {Begin Cell Gnuplot Exporting...}\n";
+    Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+    try{
+	FileWriter fstream = new FileWriter(filename);
+	BufferedWriter  out = new BufferedWriter(fstream);
+	for (int i = 0; i < eCList.size(); i++) {
+            int cellID = (int)eCList.get(i).Id;
+            double minX = eCList.get(i).minRange[0];
+            double minY = eCList.get(i).minRange[1];
+            double maxX = eCList.get(i).maxRange[0];
+            double maxY = eCList.get(i).maxRange[1];
+            out.write(cellID+ " " + minX +" "+ minY +" "+ maxX +" "+ maxY+"\n");
+        }
+        out.close();
+        }catch (IOException ex) {System.err.println(ex);}
+     Benchmark.outPutMessages = "    {Cell Exporting Gnuplot Done.}\n";
+     Starting.outputMessage.setText(Starting.outputMessage.getText()+Benchmark.outPutMessages);
+}
+
+public double GetRandomDouble (double min, double max){
+    return min + Math.floor(Math.random()*(max+1-min));
+}
+
+public ArrayList<theEventCell> PointsGenerator(int maxPubs, ArrayList<theEventCell> eCList ){
+    ArrayList<theEventCell> outputCelllist = new ArrayList<theEventCell>(); // returned cells list
+    theEventCell cell = null ;
+    double prevCellProba, cellProba;
+    Random generator = new Random();
+    double pointProba = 0.0;
+    int total =0;
+
+    // Sort the list eCList from the largest probability to the smallest
+    theEventCell cellRcp = new theEventCell();
+    for (int c=0; c < eCList.size(); c++){
+       eCList.get(c).pointsNumber = (int)(eCList.get(c).proba * maxPubs); // Initialize the number of points for each cell.
+       total += eCList.get(c).pointsNumber ;
+       for (int f=0; f < eCList.size(); f++){
+           if (eCList.get(c).proba > eCList.get(f).proba){
+                    //sort the eClist by proba
+                    cellRcp.Id = eCList.get(c).Id;
+                    cellRcp.enventAmount = eCList.get(c).enventAmount;
+                    cellRcp.maxRange = eCList.get(c).maxRange;
+                    cellRcp.minRange = eCList.get(c).minRange;
+                    cellRcp.proba = eCList.get(c).proba;
+                    cellRcp.pointsNumber = eCList.get(c).pointsNumber;
+
+                    eCList.get(c).Id = eCList.get(f).Id;
+                    eCList.get(c).enventAmount = eCList.get(f).enventAmount;
+                    eCList.get(c).maxRange = eCList.get(f).maxRange;
+                    eCList.get(c).minRange = eCList.get(f).minRange;
+                    eCList.get(c).proba = eCList.get(f).proba;
+                    eCList.get(c).pointsNumber = eCList.get(f).pointsNumber;
+
+                    eCList.get(f).Id = cellRcp.Id ;
+                    eCList.get(f).enventAmount = cellRcp.enventAmount ;
+                    eCList.get(f).maxRange =  cellRcp.maxRange;
+                    eCList.get(f).minRange = cellRcp.minRange;
+                    eCList.get(f).proba = cellRcp.proba;
+                    eCList.get(f).pointsNumber = cellRcp.pointsNumber;
+             }
+         }
+     }
+     
+    /* First assignment of cells id to each point:
+     *
+     */
+    for (int i = 0 ; i< maxPubs; i++){
+          prevCellProba = 0 ;
+          cellProba = (eCList.get(0).proba * maxPubs) ; // Begin with the probability of the first cell
+          pointProba = generator.nextDouble() * maxPubs ;  // generate a random probalility
+        
+          for (int j=0; j < eCList.size(); j++){
+          /* Browse the cells list and try to find to wich cell the point belongs.
+           * 
+           */
+           if ((pointProba >= prevCellProba) && (pointProba < cellProba)){
+               if (eCList.get(j).pointsNumber > 0){
+                    eCList.get(j).pointsNumber -=1; //decremente le nombre de point
+                    cell = new theEventCell();
+                    cell.proba = eCList.get(j).proba;
+                    cell.Id = eCList.get(j).Id;
+                    cell.maxRange = eCList.get(j).maxRange;
+                    cell.minRange = eCList.get(j).minRange;
+                    outputCelllist.add(cell); // add the cell to the output cell list
+                    //System.out.println("1st chance : cell.Id = "+ cell.Id);
+                    break;
+               }else {
+                 //System.out.println(">> Cant add a point in the cell cell.Id = "+ eCList.get(j).Id);
+               }
+            }
+           prevCellProba = cellProba;
+           if ( j < (eCList.size()-1) ) cellProba += (eCList.get(j+1).proba * maxPubs);
+           else cellProba += (eCList.get(j).proba * maxPubs);
+         }
+    }
+
+    /* Second assignment of cells Id to missing point:
+     * select cell who can recieve points
+     */
+    int lack = maxPubs - outputCelllist.size();
+    while(lack > 0 || total != 0){
+          //System.out.println("# add = "+lack+" points");
+          prevCellProba = 0 ;
+          total = 0;
+          cellProba = (eCList.get(0).proba * maxPubs) ; // Begin with the probability of the first cell
+          pointProba = generator.nextDouble() * maxPubs ;  // generate a random probalility
+
+          for (int m=0; m < eCList.size(); m++){ //
+            total += eCList.get(m).pointsNumber;
+              if (eCList.get(m).pointsNumber>0){ // if we can add a point
+                 if ((pointProba >= prevCellProba) && (pointProba < cellProba)){
+                    eCList.get(m).pointsNumber -=1; //decremente le nombre de point
+                    cell = new theEventCell();
+                    cell.proba = eCList.get(m).proba;
+                    cell.Id = eCList.get(m).Id;
+                    cell.maxRange = eCList.get(m).maxRange;
+                    cell.minRange = eCList.get(m).minRange;
+                    cell.enventAmount = eCList.get(m).enventAmount;
+                    outputCelllist.add(cell);
+                }
+              }
+              prevCellProba = cellProba;
+              if ( m < (eCList.size()-1) ) cellProba += (eCList.get(m+1).proba * maxPubs);
+              else cellProba += (eCList.get(m).proba * maxPubs);
+          }
+          lack--;
+      }
+     
+     /* Third assignment of cells Id to missing point:
+     * select cells with maximal probability and assign points uniformaly
+     */
+    lack = maxPubs - outputCelllist.size();
+    
+    while(lack > 0){
+          if (lack > eCList.size())for (int m=0; m < eCList.size(); m++) eCList.get(m).pointsNumber++;
+          else for (int m=0; m < lack; m++) eCList.get(m).pointsNumber++;
+          for (int m=0; m < eCList.size(); m++){ //
+              if (eCList.get(m).pointsNumber>0){ // if we can add a point
+                    eCList.get(m).pointsNumber -=1; //decremente le nombre de point
+                    cell = new theEventCell();
+                    cell.proba = eCList.get(m).proba;
+                    cell.Id = eCList.get(m).Id;
+                    cell.maxRange = eCList.get(m).maxRange;
+                    cell.minRange = eCList.get(m).minRange;
+                    cell.enventAmount = eCList.get(m).enventAmount;
+                    outputCelllist.add(cell);
+              }
+          }
+    lack = maxPubs - outputCelllist.size();
+    }
+    if (outputCelllist.size() < maxPubs )
+        System.out.println("UniformGenerator: the outputCelllist.size() is lesser than the number of point to be generated: " + outputCelllist.size()+ " < "+maxPubs);
+
+    return outputCelllist;
+}
+
+public boolean isValidPoint(double value, int dim){
+  boolean valid = true;
+  if (dim == 0){
+    for (int i=0; i< catgDimX.size();i++){ // verify X
+      if( ( value > catgDimX.get(i).valueMin) && (value < catgDimX.get(i).valueMax) )
+        valid = true;
+    }
+  }else{
+    for (int i=0; i< catgDimY.size();i++){ // verify X
+      if( ( value > catgDimY.get(i).valueMin) && (value < catgDimY.get(i).valueMax) )
+        valid = true;
+    }
+  }
+  return valid;
+}
+}

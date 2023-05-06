@@ -1,0 +1,15 @@
+;; Object utilities/
+;; SEMANTICDB Tags save file
+(semanticdb-project-database-file "utilities/"
+  :tables (list 
+   (semanticdb-table "Distance.java"
+    :major-mode 'java-mode
+    :tags '(("utilities" package nil nil [1 19]) ("Distance" type (:typemodifiers ("public") :members (("getDistance" function (:typemodifiers ("public" "static") :arguments (("p1" variable (:type "double[]") (reparse-symbol formal_parameters) [79 90]) ("p2" variable (:type "double[]") (reparse-symbol formal_parameters) [92 103])) :type "double") (reparse-symbol class_member_declaration) [46 255])) :type "class") nil [21 258]))
+    :file "Distance.java"
+    :pointmax 258
+    )
+   )
+  :file "semantic.cache"
+  :semantic-tag-version "2.0beta3"
+  :semanticdb-version "2.0beta3"
+  )

@@ -1,0 +1,159 @@
+New
+Asian
+Asian - Eastern Asian
+Asian - South Eastern Asian
+Asian - Central Asian
+European
+European - Eastern European
+European - Northern European
+European - Western European
+American
+African
+American - Native American
+Asian - Eastern Asian - Chinese
+Asian - Eastern Asian - Chinese - Simplified
+Asian - Eastern Asian - Chinese - Traditional
+Asian - Eastern Asian - Japanese
+Asian - Eastern Asian - Korean
+Asian - Eastern Asian - Vietnamese
+Asian - Eastern Asian - Thai
+Asian - Eastern Asian - Indian
+Asian - Eastern Asian - Indian - Hindi
+Asian - Eastern Asian - Indian - Tagalog
+Asian - Eastern Asian - Indian - Tamil
+Asian - Eastern Asian - Indian - Malayalam
+Asian - Eastern Asian - Indian - Telugu
+Asian - Eastern Asian - Indian - Marathi
+Asian - Eastern Asian - Indian - Kannada
+Asian - Eastern Asian - Indian - Assamese
+Asian - Eastern Asian - Indian - Oriya
+Asian - Eastern Asian - Indian - Sanskrit
+Asian - Eastern Asian - Indian - Kashmiri
+Asian - Central Asian - Arabic
+Asian - Central Asian - Persian
+European - Eastern European - Turkish
+European - Eastern European - Russian
+European - Eastern European - Polish
+Asian - South Eastern Asian - Indonesian
+European - Eastern European - Hungarian 
+European - Eastern European - Romanian
+European - Eastern European - Hebrew
+European - Eastern European - Ukrainian
+European - Northern European - Swedish
+European - Northern European - Danish
+European - Western European - Dutch
+European - Western European - German
+European - Western European - English
+European - Western European - English - US
+European - Western European - English - UK
+European - Western European - Breton
+European - Western European - Occitan
+European - Eastern European - Moldavian
+European - Western European - Corsican
+European - Western European - French
+European - Western European - French - French
+European - Western European - Italian
+European - Western European - RhaetoRomance
+European - Western European - Spanish
+European - Western European - Portuguese
+European - Western European - Portuguese - Brazil
+European - Western European - Portuguese - Portugal
+European - Western European - Greek
+European - Eastern European - Czech
+European - Eastern European - Lithuanian
+European - Eastern European - Catalan
+European - Northern European - Finnish
+European - Eastern European - Bulgarian
+European - Eastern European - Croatian
+Asian - South Eastern Asian - Malay
+European - Eastern European - Slovenian
+European - Northern European - Norwegian
+European - Northern European - Norwegian - B
+European - Eastern European - Slovak
+European - Eastern European - Serbian
+European - Northern European - Estonian
+European - Northern European - Latvian
+European - Western European - French - Canadian
+European - Eastern European - Esperanto
+Asian - Central Asian - Nepali 
+European - Eastern European - Albanian
+Asian - South Eastern Asian - Urdu
+Asian - South Eastern Asian - Bengali
+European - Eastern European - Azerbaijani
+European - Eastern European - Abkhazian
+European - Northern European - Afrikaans
+European - Eastern European - Bosnian
+European - Eastern European - Macedonian
+European - Western European - Galician
+European - Northern European - Icelandic
+European - Eastern European - SerboCroatian
+Asian - Central Asian - Sinhalese
+European - Eastern European - Georgian
+European - Eastern European - Maltese
+European - Eastern European - Pig Latin
+Asian - Eastern Asian - Mongolian
+Asian - Central Asian - Kurdish
+European - Western European - Basque
+Asian - Central Asian - Gujarati
+Asian - Central Asian - Armenian
+New - Elmer Fudd
+Asian - South Eastern Asian - Javanese
+Asian - Central Asian - Somali
+European - Northern European - Norwegian - Nynorsk
+African - Swahili
+Asian - South Eastern Asian - Burmese
+European - Eastern European - Latin
+New - Borkborkbork
+New - Interlingua
+European - Eastern European - Belarusian
+Asian - Central Asian - Punjabi
+African - Amharic
+New - Hacker
+Asian - Central Asian - Uzbek
+Asian - Central Asian - Pashto
+Asian - Central Asian - Uighur
+Asian - Central Asian - Turkmen
+Asian - Central Asian - Laothian
+New - Interlingue
+European - Northern European - Tatar
+European - Eastern European - Kyrgyz
+European - Western European - Irish
+African - Zulu
+European - Western European - Fiji
+Asian - Central Asian - Sindhi
+European - Eastern European - Kazakh
+Asian - South Eastern Asian - Sundanese
+Asian - South Eastern Asian - Cambodian
+Asian - South Eastern Asian - Malagasy
+European - Eastern European - Yiddish
+African - Hausa
+European - Northern European - Faroese
+European - Western European - Welsh
+New - Klingon
+Asian - South Eastern Asian - Tonga
+African - Twi
+African - Afar
+New - Volapuk
+American - Native American - Quechua
+European - Western European - Frisian
+Asian - South Eastern Asian - Bislama
+American - Native American - Guarani
+European - Eastern European - Bashkir
+American - Native American - Inuktitut
+Asian - Central Asian - Tajik
+African - Sesotho
+American - Native American - Aymara
+African - Oromo
+African - Kirundi
+African - Shona
+African - Tigrinya
+African - Siswati
+African - Yoruba
+African - Wolof
+European - Western European - Maori
+African - Lingala
+European - Northern European - Greenlandic
+African - Kinyarwanda
+Asian - South Eastern Asian - Samoan
+African - Sangho
+Asian - Central Asian - Bihari 

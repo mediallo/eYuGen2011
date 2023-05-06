@@ -1,0 +1,11 @@
+0 %Brokers 996 NoEvents 99.6 %Events
+10 %Brokers 0 Events 99.6 %Events
+20 %Brokers 2 Events 99.8 %Events
+30 %Brokers 1 Events 99.9 %Events
+40 %Brokers 0 Events 99.9 %Events
+50 %Brokers 1 Events 100.0 %Events
+60 %Brokers 0 Events 100.0 %Events
+70 %Brokers 0 Events 100.0 %Events
+80 %Brokers 0 Events 100.0 %Events
+90 %Brokers 0 Events 100.0 %Events
+100 %Brokers 0 Events 100.0 %Events
